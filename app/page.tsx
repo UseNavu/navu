@@ -17,12 +17,12 @@ type UserLocation = {
 
 export default function Home() {
   const [search, setSearch] = useState("");
-  const [filtered, setFiltered] = useState(establishments);
+  const [filtered, setFiltered] = useState<typeof establishments | null>(null);
   const [location, setLocation] = useState<UserLocation>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
-  // 📍 GPS inicial
+  // 📍 GPS
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -33,7 +33,6 @@ export default function Home() {
       });
     });
 
-    // 🔴 GPS em tempo real
     const watch = navigator.geolocation.watchPosition((pos) => {
       setUserPos([pos.coords.latitude, pos.coords.longitude]);
     });
@@ -43,6 +42,12 @@ export default function Home() {
 
   function handleSearch(value: string) {
     setSearch(value);
+
+    if (!value.trim()) {
+      setFiltered(null);
+      setSelected(null);
+      return;
+    }
 
     const results = searchEstablishments(
       value,
@@ -70,14 +75,15 @@ export default function Home() {
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="O que você quer encontrar?"
-          className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800"
+          className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800
+          focus:border-white focus:outline-none transition-all duration-300"
         />
       </div>
 
-      {/* MAPA (SÓ QUANDO TEM SELEÇÃO) */}
+      {/* MAPA */}
       {selected && (
         <div className="px-6 pb-4">
-          <div className="h-[280px] w-full">
+          <div className="h-[280px] w-full rounded-xl overflow-hidden border border-zinc-800 animate-fade-in">
             <Map
               selected={selected}
               onSelect={setSelected}
@@ -88,22 +94,36 @@ export default function Home() {
       )}
 
       {/* LISTA */}
-      <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => setSelected(item.id)}
-            className={`p-4 rounded-lg border cursor-pointer transition ${
-              selected === item.id
-                ? "bg-zinc-800 border-white"
-                : "bg-zinc-900 border-zinc-800"
-            }`}
-          >
-            <p className="font-medium">{item.name}</p>
-            <p className="text-sm text-zinc-400">{item.category}</p>
-          </div>
-        ))}
-      </div>
+      {filtered && (
+        <div className="flex-1 overflow-auto px-6 py-4 space-y-3 animate-fade-in">
+          {filtered.length > 0 ? (
+            filtered.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => setSelected(item.id)}
+                className={`group p-4 rounded-xl border cursor-pointer transition-all duration-300
+                ${
+                  selected === item.id
+                    ? "bg-zinc-800 border-white shadow-lg scale-[1.02]"
+                    : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:scale-[1.01]"
+                }`}
+              >
+                <p className="font-medium group-hover:text-white transition">
+                  {item.name}
+                </p>
+                <p className="text-sm text-zinc-400">
+                  {item.category}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-zinc-500 py-10 animate-fade-in">
+              Nenhum resultado encontrado
+            </div>
+          )}
+        </div>
+      )}
+
     </main>
   );
 }
