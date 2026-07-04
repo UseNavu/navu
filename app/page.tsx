@@ -22,7 +22,7 @@ export default function Home() {
   const [selected, setSelected] = useState<number | null>(null);
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
-  /* GPS inicial */
+  // 📍 GPS inicial
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -33,7 +33,7 @@ export default function Home() {
       });
     });
 
-    /* GPS em tempo real */
+    // 🔴 GPS em tempo real
     const watch = navigator.geolocation.watchPosition((pos) => {
       setUserPos([pos.coords.latitude, pos.coords.longitude]);
     });
@@ -59,7 +59,9 @@ export default function Home() {
       {/* HEADER */}
       <div className="text-center py-6">
         <h1 className="text-4xl font-bold">Navu</h1>
-        <p className="text-zinc-400">Descoberta inteligente local</p>
+        <p className="text-zinc-400">
+          Descoberta inteligente de comércios locais
+        </p>
       </div>
 
       {/* SEARCH */}
@@ -72,14 +74,16 @@ export default function Home() {
         />
       </div>
 
-      {/* MAPA SÓ APARECE SE SELECIONAR ALGO */}
+      {/* MAPA (SÓ QUANDO TEM SELEÇÃO) */}
       {selected && (
-        <div className="h-[400px] w-full">
-          <Map
-            selected={selected}
-            onSelect={setSelected}
-            userPos={userPos}
-          />
+        <div className="px-6 pb-4">
+          <div className="h-[280px] w-full">
+            <Map
+              selected={selected}
+              onSelect={setSelected}
+              userPos={userPos}
+            />
+          </div>
         </div>
       )}
 

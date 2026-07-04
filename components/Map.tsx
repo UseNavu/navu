@@ -11,7 +11,37 @@ import {
 
 import { establishments } from "@/data/establishments";
 import "leaflet/dist/leaflet.css";
+
 import L from "leaflet";
+
+// 🔧 FIX ÍCONES LEAFLET (OBRIGATÓRIO NO NEXT)
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x.src,
+  iconUrl: markerIcon.src,
+  shadowUrl: markerShadow.src,
+});
+
+// 🎯 ÍCONE PADRÃO CORRIGIDO
+const defaultIcon = new L.Icon({
+  iconUrl: markerIcon.src,
+  iconRetinaUrl: markerIcon2x.src,
+  shadowUrl: markerShadow.src,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+// 📍 ÍCONE USUÁRIO (SETA)
+const userIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
 
 type Props = {
   selected: number | null;
@@ -19,14 +49,7 @@ type Props = {
   userPos: [number, number] | null;
 };
 
-/* 🔴 ÍCONE DO USUÁRIO */
-const userIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-});
-
-/* 📍 FOCUS AUTOMÁTICO NO COMÉRCIO */
+// 🎯 FOCUS AUTOMÁTICO NO SELECIONADO
 function FocusMap({ selected }: { selected: number | null }) {
   const map = useMap();
 
@@ -53,42 +76,47 @@ export default function Map({ selected, onSelect, userPos }: Props) {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div style={{ height: "100%", width: "100%" }} />;
+  if (!mounted) {
+    return <div className="h-full w-full" />;
+  }
 
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div className="h-full w-full rounded-xl overflow-hidden border border-zinc-800">
       <MapContainer
         center={center}
         zoom={5}
         minZoom={4}
         maxZoom={18}
+        zoomControl={false}
+        scrollWheelZoom
+        style={{ height: "100%", width: "100%" }}
         maxBounds={[
-          [-33.75, -73.99], // sul-oeste
-          [5.27, -34.79],   // norte-leste
+          [-33.75, -73.99],
+          [5.27, -34.79],
         ]}
         maxBoundsViscosity={1.0}
-        style={{ height: "100%", width: "100%" }}
       >
+        {/* MAPA DARK BONITO */}
         <TileLayer
           attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
 
-        {/* FOCO NO SELECIONADO */}
         <FocusMap selected={selected} />
 
-        {/* MARCADOR USUÁRIO */}
+        {/* USUÁRIO */}
         {userPos && (
           <Marker position={userPos} icon={userIcon}>
             <Popup>Você está aqui</Popup>
           </Marker>
         )}
 
-        {/* ESTABELECIMENTOS */}
+        {/* COMÉRCIOS */}
         {establishments.map((item) => (
           <Marker
             key={item.id}
             position={[item.lat, item.lng]}
+            icon={defaultIcon}
             eventHandlers={{
               click: () => onSelect(item.id),
             }}
