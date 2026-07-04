@@ -1,25 +1,48 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { establishments } from "@/data/establishments";
-import L from "leaflet";
-
-// 🔧 Corrige ícones quebrados do Leaflet no Next.js
 import "leaflet/dist/leaflet.css";
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+type Props = {
+  selected: number | null;
+  onSelect: (id: number) => void;
+};
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+function FlyToSelected({
+  selected,
+}: {
+  selected: number | null;
+}) {
+  const map = useMap();
 
-export default function Map() {
+  useEffect(() => {
+    if (!selected) return;
+
+    const est = establishments.find((e) => e.id === selected);
+    if (!est) return;
+
+    map.flyTo([est.lat, est.lng], 16, {
+      duration: 1,
+    });
+  }, [selected, map]);
+
+  return null;
+}
+
+export default function Map({ selected, onSelect }: Props) {
+  const [mounted, setMounted] = useState(false);
+
   const center: [number, number] = [-23.5505, -47.9011];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div style={{ height: "100%", width: "100%" }} />;
+  }
 
   return (
     <div style={{ height: "100%", width: "100%" }}>
@@ -33,8 +56,16 @@ export default function Map() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        <FlyToSelected selected={selected} />
+
         {establishments.map((item) => (
-          <Marker key={item.id} position={[item.lat, item.lng]}>
+          <Marker
+            key={item.id}
+            position={[item.lat, item.lng]}
+            eventHandlers={{
+              click: () => onSelect(item.id),
+            }}
+          >
             <Popup>
               <strong>{item.name}</strong>
               <br />

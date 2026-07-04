@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
 import { establishments } from "@/data/establishments";
 import { searchEstablishments } from "@/lib/search";
-import Map from "@/components/Map";
+
+const Map = dynamic(() => import("@/components/Map"), {
+  ssr: false,
+});
 
 type UserLocation = {
   lat: number;
@@ -14,14 +19,10 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState(establishments);
   const [location, setLocation] = useState<UserLocation>(null);
-  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [selected, setSelected] = useState<number | null>(null);
 
-  // GPS
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setLoadingLocation(false);
-      return;
-    }
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -29,12 +30,8 @@ export default function Home() {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
-        setLoadingLocation(false);
       },
-      () => {
-        setLocation(null);
-        setLoadingLocation(false);
-      }
+      () => setLocation(null)
     );
   }, []);
 
@@ -52,14 +49,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col">
-      
-      {/* HEADER */}
+
       <div className="text-center py-6">
         <h1 className="text-4xl font-bold">Navu</h1>
         <p className="text-zinc-400">Encontre comércios perto de você</p>
       </div>
 
-      {/* SEARCH */}
       <div className="px-6 pb-4">
         <input
           value={search}
@@ -69,17 +64,20 @@ export default function Home() {
         />
       </div>
 
-      {/* MAP */}
       <div className="h-[400px] w-full">
-        <Map />
+        <Map selected={selected} onSelect={setSelected} />
       </div>
 
-      {/* LIST */}
       <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="p-4 rounded-lg bg-zinc-900 border border-zinc-800"
+            onClick={() => setSelected(item.id)}
+            className={`p-4 rounded-lg border cursor-pointer ${
+              selected === item.id
+                ? "bg-zinc-800 border-white"
+                : "bg-zinc-900 border-zinc-800"
+            }`}
           >
             <p className="font-medium">{item.name}</p>
             <p className="text-sm text-zinc-400">{item.category}</p>
