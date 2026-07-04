@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { establishments } from "@/data/establishments";
 import { searchEstablishments } from "@/lib/search";
+import Map from "@/components/Map";
 
 type UserLocation = {
   lat: number;
@@ -15,7 +16,7 @@ export default function Home() {
   const [location, setLocation] = useState<UserLocation>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
 
-  // 🌍 pega GPS real
+  // GPS
   useEffect(() => {
     if (!navigator.geolocation) {
       setLoadingLocation(false);
@@ -31,7 +32,6 @@ export default function Home() {
         setLoadingLocation(false);
       },
       () => {
-        // usuário negou permissão
         setLocation(null);
         setLoadingLocation(false);
       }
@@ -40,64 +40,52 @@ export default function Home() {
 
   function handleSearch(value: string) {
     setSearch(value);
-    setFiltered(searchEstablishments(value, establishments, location));
+
+    const results = searchEstablishments(
+      value,
+      establishments,
+      location
+    );
+
+    setFiltered(results);
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center px-6">
-      {/* TITLE */}
-      <div className="text-center mb-10">
-        <h1 className="text-5xl font-bold tracking-tight">Navu</h1>
-        <p className="text-zinc-400 mt-2">
-          Encontre o que precisa perto de você
-        </p>
-
-        {/* STATUS GPS */}
-        <p className="text-xs text-zinc-500 mt-2">
-          {loadingLocation
-            ? "Detectando sua localização..."
-            : location
-            ? "📍 Localização ativa"
-            : "📍 Localização não disponível"}
-        </p>
+    <main className="min-h-screen bg-zinc-950 text-white flex flex-col">
+      
+      {/* HEADER */}
+      <div className="text-center py-6">
+        <h1 className="text-4xl font-bold">Navu</h1>
+        <p className="text-zinc-400">Encontre comércios perto de você</p>
       </div>
 
       {/* SEARCH */}
-      <div className="w-full max-w-xl">
+      <div className="px-6 pb-4">
         <input
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="O que você quer encontrar?"
-          className="w-full px-5 py-4 rounded-xl bg-zinc-900 border border-zinc-800 focus:outline-none focus:border-zinc-600"
+          className="w-full px-4 py-3 rounded-lg bg-zinc-900 border border-zinc-800"
         />
       </div>
 
-      {/* RESULTS */}
-      {search.trim().length > 0 && (
-        <div className="w-full max-w-xl mt-8 space-y-3">
-          {filtered.length > 0 ? (
-            filtered.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-zinc-400">{item.category}</p>
-                </div>
+      {/* MAP */}
+      <div className="h-[400px] w-full">
+        <Map />
+      </div>
 
-                <span className="text-sm text-zinc-500">
-                  {item.distance}
-                </span>
-              </div>
-            ))
-          ) : (
-            <p className="text-zinc-500 text-sm text-center">
-              Nenhum resultado encontrado
-            </p>
-          )}
-        </div>
-      )}
+      {/* LIST */}
+      <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
+        {filtered.map((item) => (
+          <div
+            key={item.id}
+            className="p-4 rounded-lg bg-zinc-900 border border-zinc-800"
+          >
+            <p className="font-medium">{item.name}</p>
+            <p className="text-sm text-zinc-400">{item.category}</p>
+          </div>
+        ))}
+      </div>
     </main>
   );
 }

@@ -16,32 +16,39 @@ function scoreItem(
   item: Establishment,
   location: UserLocation
 ): number {
-  const intent = detectIntent(query);
-
   const q = normalize(query);
   const name = item.name.toLowerCase();
   const category = item.category.toLowerCase();
 
+  const intent = detectIntent(q);
+
   let score = 0;
 
-  // 🎯 INTENÇÃO
-  if (intent.categories.includes(category)) {
+  // 🎯 1. INTENÇÃO (MAIOR PESO)
+  if (intent.categories?.includes(category)) {
     score += 200;
   }
 
-  // 🔎 TEXTO
-  if (name.startsWith(q)) score += 120;
-  else if (name.includes(q)) score += 60;
+  // 🔎 2. MATCH TEXTO (NOME)
+  if (name.startsWith(q)) {
+    score += 120;
+  } else if (name.includes(q)) {
+    score += 60;
+  }
 
-  if (category.includes(q)) score += 40;
+  // 🔎 3. MATCH CATEGORIA
+  if (category.includes(q)) {
+    score += 40;
+  }
 
-  // 🌍 GPS REAL
+  // 🌍 4. GPS REAL
   if (location) {
     const distance = getDistanceKm(location, item);
 
     if (distance < 1) score += 120;
     else if (distance < 2) score += 80;
     else if (distance < 5) score += 40;
+    else if (distance < 10) score += 10;
   }
 
   return score;
@@ -54,14 +61,14 @@ export function searchEstablishments(
 ): Establishment[] {
   const q = normalize(query);
 
-  if (!q) return [];
+  if (!q) return data; // 🔥 IMPORTANTE: não sumir tudo
 
   return data
     .map((item) => ({
       item,
       score: scoreItem(q, item, location),
     }))
-    .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score)
+    .filter((x) => x.score >= 20) // 🔥 filtro menos agressivo
     .map((x) => x.item);
 }

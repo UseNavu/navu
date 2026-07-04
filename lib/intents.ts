@@ -4,26 +4,45 @@ export type Intent = {
 };
 
 const rules = [
-  { keywords: ["arroz", "feijão", "mercado", "comida", "comprar"], category: "mercado" },
-  { keywords: ["gasolina", "gas", "etanol", "diesel", "posto"], category: "posto" },
-  { keywords: ["remedio", "rem", "farmacia", "farm"], category: "farmácia" },
-  { keywords: ["ração", "pet", "cachorro", "gato"], category: "pet" },
+  {
+    keywords: ["arroz", "feijão", "mercado", "comida", "comprar", "supermercado"],
+    category: "mercado",
+  },
+  {
+    keywords: ["gasolina", "gas", "etanol", "diesel", "posto", "combustível"],
+    category: "posto",
+  },
+  {
+    keywords: ["remedio", "remédios", "farmacia", "farmácia", "droga"],
+    category: "farmacia",
+  },
+  {
+    keywords: ["ração", "pet", "cachorro", "gato", "animal"],
+    category: "agro",
+  },
+  {
+    keywords: ["padaria", "pão", "bolo", "café"],
+    category: "padaria",
+  },
 ];
 
+function normalize(text: string) {
+  return text.toLowerCase().trim();
+}
+
 function matchScore(query: string, keyword: string): number {
-  const q = query.toLowerCase();
-  const k = keyword.toLowerCase();
+  const q = normalize(query);
+  const k = normalize(keyword);
 
   if (q === k) return 100;
-  if (k.startsWith(q)) return 80; // incremental forte
-  if (k.includes(q)) return 60;
-  if (q.includes(k)) return 40;
+  if (q.includes(k)) return 90;
+  if (k.includes(q)) return 70;
 
   return 0;
 }
 
 export function detectIntent(query: string): Intent {
-  const q = query.toLowerCase().trim();
+  const q = normalize(query);
 
   const scored: { category: string; score: number }[] = [];
 
@@ -36,17 +55,20 @@ export function detectIntent(query: string): Intent {
     }
 
     if (best > 0) {
-      scored.push({ category: rule.category, score: best });
+      scored.push({
+        category: rule.category,
+        score: best,
+      });
     }
   }
 
   scored.sort((a, b) => b.score - a.score);
 
-  const categories = scored.map((s) => s.category);
-  const confidence = scored.length > 0 ? scored[0].score : 0;
+  // 🔥 fallback inteligente (MUITO IMPORTANTE)
+  const top = scored[0];
 
   return {
-    categories,
-    confidence,
+    categories: scored.map((s) => s.category),
+    confidence: top ? top.score : 0,
   };
 }
