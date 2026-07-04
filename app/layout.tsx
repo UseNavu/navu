@@ -3,12 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 
-// Leaflet CSS (mapa base)
-import "leaflet/dist/leaflet.css";
-
-// Leaflet Routing Machine CSS (rota azul)
-import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
-
+/* ---------------- FONTS ---------------- */
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -24,11 +19,12 @@ export const metadata: Metadata = {
   description: "Descoberta inteligente de comércios locais",
 };
 
+/* ---------------- ROOT LAYOUT ---------------- */
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html
       lang="pt-br"
