@@ -20,19 +20,25 @@ export default function Home() {
   const [filtered, setFiltered] = useState(establishments);
   const [location, setLocation] = useState<UserLocation>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
+  /* GPS inicial */
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-      },
-      () => setLocation(null)
-    );
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      });
+    });
+
+    /* GPS em tempo real */
+    const watch = navigator.geolocation.watchPosition((pos) => {
+      setUserPos([pos.coords.latitude, pos.coords.longitude]);
+    });
+
+    return () => navigator.geolocation.clearWatch(watch);
   }, []);
 
   function handleSearch(value: string) {
@@ -50,11 +56,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col">
 
+      {/* HEADER */}
       <div className="text-center py-6">
         <h1 className="text-4xl font-bold">Navu</h1>
-        <p className="text-zinc-400">Encontre comércios perto de você</p>
+        <p className="text-zinc-400">Descoberta inteligente local</p>
       </div>
 
+      {/* SEARCH */}
       <div className="px-6 pb-4">
         <input
           value={search}
@@ -64,16 +72,24 @@ export default function Home() {
         />
       </div>
 
-      <div className="h-[400px] w-full">
-        <Map selected={selected} onSelect={setSelected} />
-      </div>
+      {/* MAPA SÓ APARECE SE SELECIONAR ALGO */}
+      {selected && (
+        <div className="h-[400px] w-full">
+          <Map
+            selected={selected}
+            onSelect={setSelected}
+            userPos={userPos}
+          />
+        </div>
+      )}
 
+      {/* LISTA */}
       <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
         {filtered.map((item) => (
           <div
             key={item.id}
             onClick={() => setSelected(item.id)}
-            className={`p-4 rounded-lg border cursor-pointer ${
+            className={`p-4 rounded-lg border cursor-pointer transition ${
               selected === item.id
                 ? "bg-zinc-800 border-white"
                 : "bg-zinc-900 border-zinc-800"
