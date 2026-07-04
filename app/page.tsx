@@ -23,6 +23,8 @@ export default function Home() {
   const [location, setLocation] = useState<UserLocation>(null);
 
   const [selected, setSelected] = useState<number | null>(null);
+  const [activeRoute, setActiveRoute] = useState<number | null>(null);
+
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
   /* ---------------- GPS ---------------- */
@@ -78,33 +80,47 @@ export default function Home() {
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="O que você quer encontrar?"
-          className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800
-          focus:border-white focus:outline-none transition"
+          className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800"
         />
       </div>
 
-      {/* MAPA SEMPRE VISÍVEL (CORRIGIDO) */}
+      {/* MAPA */}
       <div className="px-6 pb-4">
         <div className="h-[280px] w-full rounded-xl overflow-hidden border border-zinc-800">
-          <Map selected={selected} userPos={userPos} />
+          <Map
+            selected={selected}
+            activeRoute={activeRoute}
+            userPos={userPos}
+          />
         </div>
       </div>
 
       {/* LISTA */}
-      <div className="flex-1 overflow-auto px-6 py-4 space-y-3 animate-fade-in">
+      <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
         {filtered.map((item) => (
           <div
             key={item.id}
-            onClick={() => setSelected(item.id)}
-            className={`p-4 rounded-xl border cursor-pointer transition
-            ${
+            className={`p-4 rounded-xl border transition ${
               selected === item.id
                 ? "bg-zinc-800 border-white"
-                : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800"
+                : "bg-zinc-900 border-zinc-800"
             }`}
           >
             <p className="font-medium">{item.name}</p>
-            <p className="text-sm text-zinc-400">{item.category}</p>
+            <p className="text-sm text-zinc-400 mb-3">
+              {item.category}
+            </p>
+
+            {/* BOTÃO IR ATÉ LÁ */}
+            <button
+              onClick={() => {
+                setSelected(item.id);
+                setActiveRoute(item.id);
+              }}
+              className="px-3 py-2 text-sm bg-blue-600 rounded-lg hover:bg-blue-500 transition"
+            >
+              Ir até lá
+            </button>
           </div>
         ))}
       </div>
