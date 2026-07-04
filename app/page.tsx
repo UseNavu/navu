@@ -19,18 +19,25 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState<typeof establishments | null>(null);
   const [location, setLocation] = useState<UserLocation>(null);
+  const [gpsReady, setGpsReady] = useState(false);
+
   const [selected, setSelected] = useState<number | null>(null);
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
 
   // 📍 GPS
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setGpsReady(true);
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition((pos) => {
       setLocation({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
       });
+
+      setGpsReady(true);
     });
 
     const watch = navigator.geolocation.watchPosition((pos) => {
@@ -76,19 +83,23 @@ export default function Home() {
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="O que você quer encontrar?"
           className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800
-          focus:border-white focus:outline-none transition-all duration-300"
+          focus:border-white focus:outline-none transition"
         />
       </div>
 
-      {/* MAPA */}
+      {/* MAPA OU SKELETON */}
       {selected && (
         <div className="px-6 pb-4">
-          <div className="h-[280px] w-full rounded-xl overflow-hidden border border-zinc-800 animate-fade-in">
-            <Map
-              selected={selected}
-              onSelect={setSelected}
-              userPos={userPos}
-            />
+          <div className="h-[280px] w-full rounded-xl overflow-hidden border border-zinc-800">
+            {!gpsReady ? (
+              <MapSkeleton />
+            ) : (
+              <Map
+                selected={selected}
+                onSelect={setSelected}
+                userPos={userPos}
+              />
+            )}
           </div>
         </div>
       )}
@@ -101,29 +112,37 @@ export default function Home() {
               <div
                 key={item.id}
                 onClick={() => setSelected(item.id)}
-                className={`group p-4 rounded-xl border cursor-pointer transition-all duration-300
+                className={`p-4 rounded-xl border cursor-pointer transition
                 ${
                   selected === item.id
-                    ? "bg-zinc-800 border-white shadow-lg scale-[1.02]"
-                    : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:scale-[1.01]"
+                    ? "bg-zinc-800 border-white"
+                    : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800"
                 }`}
               >
-                <p className="font-medium group-hover:text-white transition">
-                  {item.name}
-                </p>
+                <p className="font-medium">{item.name}</p>
                 <p className="text-sm text-zinc-400">
                   {item.category}
                 </p>
               </div>
             ))
           ) : (
-            <div className="text-center text-zinc-500 py-10 animate-fade-in">
+            <div className="text-center text-zinc-500 py-10">
               Nenhum resultado encontrado
             </div>
           )}
         </div>
       )}
-
     </main>
+  );
+}
+
+/* 🧊 SKELETON DO MAPA */
+function MapSkeleton() {
+  return (
+    <div className="h-full w-full bg-zinc-900 relative overflow-hidden">
+      <div className="absolute inset-0 animate-pulse">
+        <div className="h-full w-full bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 animate-shimmer" />
+      </div>
+    </div>
   );
 }

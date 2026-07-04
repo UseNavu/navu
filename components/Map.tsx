@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 
-import { establishments } from "@/data/establishments";
 import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine";
 
 import L from "leaflet";
+import { establishments } from "@/data/establishments";
 
-// 🔧 FIX ÍCONES LEAFLET (OBRIGATÓRIO NO NEXT)
+/* ---------------- ICON FIX ---------------- */
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
@@ -27,7 +22,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow.src,
 });
 
-// 🎯 ÍCONE PADRÃO CORRIGIDO
+/* ---------------- ICONS ---------------- */
 const defaultIcon = new L.Icon({
   iconUrl: markerIcon.src,
   iconRetinaUrl: markerIcon2x.src,
@@ -36,20 +31,51 @@ const defaultIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-// 📍 ÍCONE USUÁRIO (SETA)
 const userIcon = new L.Icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
   iconSize: [28, 28],
   iconAnchor: [14, 14],
 });
 
-type Props = {
-  selected: number | null;
-  onSelect: (id: number) => void;
+/* ---------------- ROUTE ---------------- */
+function Routing({
+  userPos,
+  dest,
+}: {
   userPos: [number, number] | null;
-};
+  dest: any;
+}) {
+  const map = useMap();
 
-// 🎯 FOCUS AUTOMÁTICO NO SELECIONADO
+  useEffect(() => {
+    if (!userPos || !dest) return;
+
+    const routingControl = (L as any).Routing.control({
+      waypoints: [
+        L.latLng(userPos[0], userPos[1]),
+        L.latLng(dest.lat, dest.lng),
+      ],
+      lineOptions: {
+        styles: [{ color: "#3b82f6", weight: 5 }],
+      },
+      addWaypoints: false,
+      draggableWaypoints: false,
+      fitSelectedRoutes: true,
+      show: false,
+    });
+
+    routingControl.addTo(map);
+
+    // ✅ CLEANUP CORRETO (NUNCA RETORNAR MAP OU CONTROL DIRETO)
+    return () => {
+      map.removeControl(routingControl);
+    };
+  }, [userPos, dest, map]);
+
+  return null;
+}
+
+/* ---------------- FOCUS ---------------- */
 function FocusMap({ selected }: { selected: number | null }) {
   const map = useMap();
 
@@ -59,26 +85,32 @@ function FocusMap({ selected }: { selected: number | null }) {
     const est = establishments.find((e) => e.id === selected);
     if (!est) return;
 
-    map.flyTo([est.lat, est.lng], 16, {
-      duration: 1,
-    });
+    map.flyTo([est.lat, est.lng], 16, { duration: 1 });
   }, [selected, map]);
 
   return null;
 }
 
-export default function Map({ selected, onSelect, userPos }: Props) {
+/* ---------------- COMPONENT ---------------- */
+export default function Map({
+  selected,
+  userPos,
+}: {
+  selected: number | null;
+  onSelect: (id: number) => void;
+  userPos: [number, number] | null;
+}) {
   const [mounted, setMounted] = useState(false);
 
-  const center: [number, number] = [-15.78, -47.93]; // Brasil
+  const center: [number, number] = [-15.78, -47.93];
+
+  const dest = establishments.find((e) => e.id === selected);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return <div className="h-full w-full" />;
-  }
+  if (!mounted) return <div className="h-full w-full bg-zinc-900" />;
 
   return (
     <div className="h-full w-full rounded-xl overflow-hidden border border-zinc-800">
@@ -94,40 +126,36 @@ export default function Map({ selected, onSelect, userPos }: Props) {
           [-33.75, -73.99],
           [5.27, -34.79],
         ]}
-        maxBoundsViscosity={1.0}
+        maxBoundsViscosity={1}
       >
-        {/* MAPA DARK BONITO */}
+        {/* TILE DARK */}
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
+          attribution="&copy; OpenStreetMap"
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
 
         <FocusMap selected={selected} />
 
-        {/* USUÁRIO */}
+        {/* ROTA */}
+        {userPos && dest && (
+          <Routing userPos={userPos} dest={dest} />
+        )}
+
+        {/* USER */}
         {userPos && (
           <Marker position={userPos} icon={userIcon}>
             <Popup>Você está aqui</Popup>
           </Marker>
         )}
 
-        {/* COMÉRCIOS */}
-        {establishments.map((item) => (
-          <Marker
-            key={item.id}
-            position={[item.lat, item.lng]}
-            icon={defaultIcon}
-            eventHandlers={{
-              click: () => onSelect(item.id),
-            }}
-          >
+        {/* DESTINO */}
+        {dest && (
+          <Marker position={[dest.lat, dest.lng]} icon={defaultIcon}>
             <Popup>
-              <strong>{item.name}</strong>
-              <br />
-              {item.category}
+              <strong>{dest.name}</strong>
             </Popup>
           </Marker>
-        ))}
+        )}
       </MapContainer>
     </div>
   );

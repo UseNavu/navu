@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
 
-// Leaflet CSS (OBRIGATÓRIO para o mapa funcionar)
+// Leaflet CSS (mapa base)
 import "leaflet/dist/leaflet.css";
+
+// Leaflet Routing Machine CSS (rota azul)
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +34,9 @@ export default function RootLayout({
       lang="pt-br"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+      </body>
     </html>
   );
 }
