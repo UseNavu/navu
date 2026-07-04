@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 
 import { establishments } from "@/data/establishments";
 import { searchEstablishments } from "@/lib/search";
@@ -10,19 +10,12 @@ const Map = dynamic(() => import("@/components/Map"), {
   ssr: false,
 });
 
-type UserLocation = {
-  lat: number;
-  lng: number;
-} | null;
-
 export default function Home() {
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState(establishments);
-
   const [userPos, setUserPos] =
     useState<[number, number] | null>(null);
 
-  /* ---------------- GPS ---------------- */
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -31,7 +24,6 @@ export default function Home() {
     });
   }, []);
 
-  /* ---------------- SEARCH ---------------- */
   function handleSearch(value: string) {
     setSearch(value);
 
@@ -52,42 +44,31 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col">
 
-      {/* HEADER */}
       <div className="text-center py-6">
         <h1 className="text-4xl font-bold">Navu</h1>
-        <p className="text-zinc-400">
-          Descoberta inteligente de comércios locais
-        </p>
       </div>
 
-      {/* SEARCH */}
       <div className="px-6 pb-4">
         <input
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          placeholder="O que você quer encontrar?"
-          className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800"
+          className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl"
         />
       </div>
 
-      {/* MAPA */}
       <div className="px-6 pb-4">
-        <div className="h-[300px] w-full rounded-xl overflow-hidden border border-zinc-800">
+        <div className="h-[300px] rounded-xl overflow-hidden border border-zinc-800">
           <Map userPos={userPos} />
         </div>
       </div>
 
-      {/* LISTA SIMPLES */}
-      <div className="flex-1 overflow-auto px-6 py-4 space-y-3">
+      <div className="px-6 space-y-3">
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="p-4 rounded-xl border border-zinc-800 bg-zinc-900"
+            className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl"
           >
-            <p className="font-medium">{item.name}</p>
-            <p className="text-sm text-zinc-400">
-              {item.category}
-            </p>
+            {item.name}
           </div>
         ))}
       </div>
