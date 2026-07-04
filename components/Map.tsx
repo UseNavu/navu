@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 
 import "leaflet/dist/leaflet.css";
-import "leaflet-routing-machine";
 
 import L from "leaflet";
 import { establishments } from "@/data/establishments";
@@ -37,44 +36,6 @@ const userIcon = new L.Icon({
   iconAnchor: [14, 14],
 });
 
-/* ---------------- ROUTE ---------------- */
-function Routing({
-  userPos,
-  dest,
-}: {
-  userPos: [number, number] | null;
-  dest: any;
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!userPos || !dest) return;
-
-    const routingControl = (L as any).Routing.control({
-      waypoints: [
-        L.latLng(userPos[0], userPos[1]),
-        L.latLng(dest.lat, dest.lng),
-      ],
-      lineOptions: {
-        styles: [{ color: "#3b82f6", weight: 5 }],
-      },
-      addWaypoints: false,
-      draggableWaypoints: false,
-      fitSelectedRoutes: true,
-      show: false,
-    });
-
-    routingControl.addTo(map);
-
-    // ✅ CLEANUP CORRETO (NUNCA RETORNAR MAP OU CONTROL DIRETO)
-    return () => {
-      map.removeControl(routingControl);
-    };
-  }, [userPos, dest, map]);
-
-  return null;
-}
-
 /* ---------------- FOCUS ---------------- */
 function FocusMap({ selected }: { selected: number | null }) {
   const map = useMap();
@@ -91,26 +52,61 @@ function FocusMap({ selected }: { selected: number | null }) {
   return null;
 }
 
+/* ---------------- ROUTE SIMPLES (SEM PLUGIN) ---------------- */
+function RouteLine({
+  userPos,
+  dest,
+}: {
+  userPos: [number, number] | null;
+  dest: any;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!userPos || !dest) return;
+
+    const polyline = L.polyline(
+      [
+        userPos,
+        [dest.lat, dest.lng],
+      ],
+      {
+        color: "#3b82f6",
+        weight: 4,
+      }
+    ).addTo(map);
+
+    return () => {
+      map.removeLayer(polyline);
+    };
+  }, [userPos, dest, map]);
+
+  return null;
+}
+
 /* ---------------- COMPONENT ---------------- */
 export default function Map({
   selected,
   userPos,
 }: {
   selected: number | null;
-  onSelect: (id: number) => void;
   userPos: [number, number] | null;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const center: [number, number] = [-15.78, -47.93];
-
   const dest = establishments.find((e) => e.id === selected);
 
   useEffect(() => {
     setMounted(true);
+    const t = setTimeout(() => setReady(true), 50);
+    return () => clearTimeout(t);
   }, []);
 
-  if (!mounted) return <div className="h-full w-full bg-zinc-900" />;
+  if (!mounted || !ready) {
+    return <div className="h-full w-full bg-zinc-900 animate-pulse" />;
+  }
 
   return (
     <div className="h-full w-full rounded-xl overflow-hidden border border-zinc-800">
@@ -128,7 +124,6 @@ export default function Map({
         ]}
         maxBoundsViscosity={1}
       >
-        {/* TILE DARK */}
         <TileLayer
           attribution="&copy; OpenStreetMap"
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -136,9 +131,9 @@ export default function Map({
 
         <FocusMap selected={selected} />
 
-        {/* ROTA */}
+        {/* ROTA SIMPLES (SEM LIB EXTERNA) */}
         {userPos && dest && (
-          <Routing userPos={userPos} dest={dest} />
+          <RouteLine userPos={userPos} dest={dest} />
         )}
 
         {/* USER */}
